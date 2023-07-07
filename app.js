@@ -1,134 +1,218 @@
-//* Selecionando itens
-const alert = document.querySelector('.alert');
-const form = document.querySelector('.grocery-form');
-const grocery = document.getElementById('grocery');
-const submitBtn = document.querySelector('.submit-btn');
-const container = document.querySelector('.grocery-container');
-const list = document.querySelector('.grocery-list');
-const clearBtn = document.querySelector('.clear-btn');
+// ****** select items **********
 
-//* Editando as opções
+const form = document.querySelector(".grocery-form");
+const alert = document.querySelector(".alert");
+const grocery = document.getElementById("grocery");
+const submitBtn = document.querySelector(".submit-btn");
+const container = document.querySelector(".grocery-container");
+const list = document.querySelector(".grocery-list");
+const clearBtn = document.querySelector(".clear-btn");
+// edit option
 let editElement;
 let editFlag = false;
 let editID = "";
+// ****** event listeners **********
 
-//* Escutadores de eventos
-//* Submit form
-form.addEventListener('submit', addItem)
+// submit form
+form.addEventListener("submit", addItem);
+// clear list
+clearBtn.addEventListener("click", clearItems);
+// display items onload
+window.addEventListener("DOMContentLoaded", setupItems);
 
-//* Limpando itens
-clearBtn.addEventListener('click', clearItems)
+// ****** functions **********
 
-
-//* Funções
+// add item
 function addItem(e) {
     e.preventDefault();
     const value = grocery.value;
     const id = new Date().getTime().toString();
-    if(value && !editFlag){
-        const element = document.createElement('article');
-        //* Adicionando class
-        element.classList.add('grocery-item');
-        //* Adicionando id
-        const attr = document.createAttribute('data-id');
+
+    if (value !== "" && !editFlag) {
+        const element = document.createElement("article");
+        let attr = document.createAttribute("data-id");
         attr.value = id;
         element.setAttributeNode(attr);
-        element.innerHTML = `
-                    <p class="title">${value}</p>
-                    <div class="btn-container">
-                        <button type="button" class="edit-btn">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button type="button" class="delete-btn">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-        `;
-        const deleteBtn = element.querySelector('.delete-btn');
-        const editBtn = element.querySelector('.edit-btn');
-        deleteBtn.addEventListener('click', deleteItem);
-        editBtn.addEventListener('click', editItem);
-        //* Acrescentar no filho
+        element.classList.add("grocery-item");
+        element.innerHTML = `<p class="title">${value}</p>
+            <div class="btn-container">
+                <!-- edit btn -->
+                <button type="button" class="edit-btn">
+                <i class="fas fa-edit"></i>
+                </button>
+                <!-- delete btn -->
+                <button type="button" class="delete-btn">
+                <i class="fas fa-trash"></i>
+                </button>
+            </div>
+            `;
+        // add event listeners to both buttons;
+        const deleteBtn = element.querySelector(".delete-btn");
+        deleteBtn.addEventListener("click", deleteItem);
+        const editBtn = element.querySelector(".edit-btn");
+        editBtn.addEventListener("click", editItem);
+
+        // append child
         list.appendChild(element);
-        //* Mostrar alerta
-        displayAlert('item added to the list', 'success');
-        //* mostrar container
-        container.classList.add('show-container');
-        //* adicionando ao local de armazenamento
+        // display alert
+        displayAlert("item added to the list", "success");
+        // show container
+        container.classList.add("show-container");
+        // set local storage
         addToLocalStorage(id, value);
-        //* Definindo a volta para o padrão
+        // set back to default
         setBackToDefault();
-    }
-    else if(value && editFlag){
-        console.log('editing')
-    }
-    else{
-        displayAlert('please enter value', 'danger')
+    } else if (value !== "" && editFlag) {
+        editElement.innerHTML = value;
+        displayAlert("value changed", "success");
+
+        // edit  local storage
+        editLocalStorage(editID, value);
+        setBackToDefault();
+    } else {
+        displayAlert("please enter value", "danger");
     }
 }
-//* Mostrando alerta
+// display alert
 function displayAlert(text, action) {
     alert.textContent = text;
     alert.classList.add(`alert-${action}`);
-
-    //* Removendo alerta
-    setTimeout(function() {
-        alert.textContent = '';
+    // remove alert
+    setTimeout(function () {
+        alert.textContent = "";
         alert.classList.remove(`alert-${action}`);
-    }, 1000)
+    }, 1000);
 }
 
-//* Limpando Itens
+// clear items
 function clearItems() {
-    const items = document.querySelectorAll('.grocery-item');
-    if(items.length > 0) {
-        items.forEach(function(item) {
+    const items = document.querySelectorAll(".grocery-item");
+    if (items.length > 0) {
+        items.forEach(function (item) {
             list.removeChild(item);
         });
     }
-    container.classList.remove('show-container');
-    displayAlert('empty list', 'danger');
+    container.classList.remove("show-container");
+    displayAlert("empty list", "danger");
     setBackToDefault();
-    // localStorage.removeItem('list');
+    localStorage.removeItem("list");
 }
 
-//* deletando function
+// delete item
+
 function deleteItem(e) {
     const element = e.currentTarget.parentElement.parentElement;
     const id = element.dataset.id;
+
     list.removeChild(element);
-    if(list.children.length === 0) {
-        container.classList.remove('show-container')
+
+    if (list.children.length === 0) {
+        container.classList.remove("show-container");
     }
-    displayAlert('item removed', 'danger');
+    displayAlert("item removed", "danger");
+
     setBackToDefault();
-    //* Removendo do armazenamento local
-    //* removeFromLocalStorage(id);
+    // remove from local storage
+    removeFromLocalStorage(id);
 }
-//* editando function
-function editItem() {
+// edit item
+function editItem(e) {
     const element = e.currentTarget.parentElement.parentElement;
-    //* Definindo edição do item
+    // set edit item
     editElement = e.currentTarget.parentElement.previousElementSibling;
-    //* Definindo forma de valor
+    // set form value
     grocery.value = editElement.innerHTML;
     editFlag = true;
     editID = element.dataset.id;
+    //
     submitBtn.textContent = "edit";
 }
-
-//* Definindo a volta para o padrão
+// set backt to defaults
 function setBackToDefault() {
-    grocery.value = '';
+    grocery.value = "";
     editFlag = false;
-    editID = '';
-    submitBtn.textContent = 'submit';
+    editID = "";
+    submitBtn.textContent = "submit";
 }
 
-//* Armazenamento local
+// ****** local storage **********
+
+// add to local storage
 function addToLocalStorage(id, value) {
-    // console.log('added to local storage');
+    const grocery = { id, value };
+    let items = getLocalStorage();
+    items.push(grocery);
+    localStorage.setItem("list", JSON.stringify(items));
 }
-function removeFromLocalStorage(id) {
 
+function getLocalStorage() {
+    return localStorage.getItem("list")
+        ? JSON.parse(localStorage.getItem("list"))
+        : [];
+}
+
+function removeFromLocalStorage(id) {
+    let items = getLocalStorage();
+
+    items = items.filter(function (item) {
+        if (item.id !== id) {
+            return item;
+        }
+    });
+
+    localStorage.setItem("list", JSON.stringify(items));
+}
+function editLocalStorage(id, value) {
+    let items = getLocalStorage();
+
+    items = items.map(function (item) {
+        if (item.id === id) {
+            item.value = value;
+        }
+        return item;
+    });
+    localStorage.setItem("list", JSON.stringify(items));
+}
+
+// SETUP LOCALSTORAGE.REMOVEITEM('LIST');
+
+// ****** setup items **********
+
+function setupItems() {
+    let items = getLocalStorage();
+
+    if (items.length > 0) {
+        items.forEach(function (item) {
+            createListItem(item.id, item.value);
+        });
+        container.classList.add("show-container");
+    }
+}
+
+function createListItem(id, value) {
+    const element = document.createElement("article");
+    let attr = document.createAttribute("data-id");
+    attr.value = id;
+    element.setAttributeNode(attr);
+    element.classList.add("grocery-item");
+    element.innerHTML = `<p class="title">${value}</p>
+            <div class="btn-container">
+                <!-- edit btn -->
+                <button type="button" class="edit-btn">
+                <i class="fas fa-edit"></i>
+                </button>
+                <!-- delete btn -->
+                <button type="button" class="delete-btn">
+                <i class="fas fa-trash"></i>
+                </button>
+            </div>
+            `;
+    // add event listeners to both buttons;
+    const deleteBtn = element.querySelector(".delete-btn");
+    deleteBtn.addEventListener("click", deleteItem);
+    const editBtn = element.querySelector(".edit-btn");
+    editBtn.addEventListener("click", editItem);
+
+    // append child
+    list.appendChild(element);
 }
